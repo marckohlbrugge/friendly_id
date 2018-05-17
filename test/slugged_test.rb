@@ -1,8 +1,21 @@
 require "helper"
 
+module Sluggable
+  extend ActiveSupport::Concern
+
+  included do
+    extend FriendlyId
+    friendly_id :name, :use => :slugged
+  end
+
+  # NOTE: This is ignored.
+  def should_generate_new_friendly_id?
+    true
+  end
+end
+
 class Journalist < ActiveRecord::Base
-  extend FriendlyId
-  friendly_id :name, :use => :slugged
+  include Sluggable
 end
 
 class Article < ActiveRecord::Base
@@ -89,6 +102,14 @@ class SluggedTest < TestCaseClass
       record.name += " "
       record.save!
       assert_equal old_id, record.friendly_id
+    end
+  end
+
+  test "should respect should_generate_new_friendly_id? in concern" do
+    with_instance_of model_class do |record|
+      record.name = "new name"
+      record.save!
+      assert_equal "new-name", record.friendly_id
     end
   end
 
